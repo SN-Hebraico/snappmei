@@ -8,11 +8,15 @@ export default function App() {
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Se veio de link de recovery, mostra tela de reset
-  const isRecovery = typeof window !== "undefined" && window.location.hash.includes("type=recovery");
+  const isRecovery =
+    typeof window !== "undefined" &&
+    window.location.hash.includes("type=recovery");
 
   useEffect(() => {
+    let mounted = true;
+
     supabase.auth.getSession().then(({ data }) => {
+      if (!mounted) return;
       setSession(data.session);
       setLoading(false);
     });
@@ -21,11 +25,15 @@ export default function App() {
       setSession(newSession);
     });
 
-    return () => listener.subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      listener.subscription.unsubscribe();
+    };
   }, []);
 
-  if (isRecovery) return <ResetPassword />;
   if (loading) return null;
+
+  if (isRecovery) return <ResetPassword />;
 
   return session ? <ProtectedApp /> : <Login />;
 }
