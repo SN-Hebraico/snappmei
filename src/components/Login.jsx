@@ -5,20 +5,24 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [errorMsg, setErrorMsg] = useState("");
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    setError("");
+    setErrorMsg("");
     setLoading(true);
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) setError(error.message);
-      // se deu certo, App.jsx detecta a session e troca para <ProtectedApp />
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+
+      console.log("LOGIN DATA:", data);
+      console.log("LOGIN ERROR:", error);
+
+      if (error) setErrorMsg(error.message);
+      // Se logou, o App/AuthGate detecta a session e troca para a área logada
     } catch (err) {
       console.error(err);
-      setError("Erro inesperado ao tentar entrar.");
+      setErrorMsg("Erro inesperado ao tentar entrar.");
     } finally {
       setLoading(false);
     }
@@ -38,7 +42,7 @@ export default function Login() {
             <input
               type="email"
               required
-              className="w-full mt-1 px-4 py-2 border rounded-lg"
+              className="w-full mt-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               autoComplete="email"
@@ -50,14 +54,14 @@ export default function Login() {
             <input
               type="password"
               required
-              className="w-full mt-1 px-4 py-2 border rounded-lg"
+              className="w-full mt-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               autoComplete="current-password"
             />
           </div>
 
-          {error && <p className="text-sm text-red-600 text-center">{error}</p>}
+          {errorMsg && <p className="text-sm text-red-600 text-center">{errorMsg}</p>}
 
           <button
             type="submit"
