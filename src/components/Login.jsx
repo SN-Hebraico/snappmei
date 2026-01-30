@@ -5,33 +5,30 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [errorMsg, setErrorMsg] = useState("");
 
-const handleLogin = async (e) => {
-  e.preventDefault();
-  setError("");
-  setLoading(true);
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setErrorMsg("");
+    setLoading(true);
 
-  try {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) setError(error.message);
-  } finally {
-    setLoading(false);
-  }
-};
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
       console.log("LOGIN DATA:", data);
       console.log("LOGIN ERROR:", error);
 
       if (error) {
-        setError(error.message);
+        setErrorMsg(error.message);
         return;
       }
-
-      // Se logou, o App.jsx vai detectar a session e trocar para <ProtectedApp />
+      // Se logou, o App.jsx vai detectar a sessão e trocar para <ProtectedApp />
     } catch (err) {
       console.error(err);
-      setError("Erro inesperado ao tentar entrar.");
+      setErrorMsg("Erro inesperado ao tentar entrar.");
     } finally {
       setLoading(false);
     }
@@ -70,7 +67,7 @@ const handleLogin = async (e) => {
             />
           </div>
 
-          {error && <p className="text-sm text-red-600 text-center">{error}</p>}
+          {errorMsg && <p className="text-sm text-red-600 text-center">{errorMsg}</p>}
 
           <button
             type="submit"
