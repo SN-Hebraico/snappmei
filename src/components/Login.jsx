@@ -21,9 +21,11 @@ export default function Login() {
     console.log("LOGIN ERROR:", error);
 
     if (error) {
-      setError(error.message);
-      setLoading(false);
-      return;
+  setError(error.message);
+  setLoading(false);
+  return;
+}
+setLoading(false);
     }
 
     setLoading(false);
