@@ -603,7 +603,7 @@ const CompanyProfileModal = ({ isOpen, onClose, data, onSave }) => {
   );
 };
 
-export default function ProtectedApp() {
+export default function ProtectedApp({ isAdmin, checkingAdmin, route }) {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
   const [editingItem, setEditingItem] = useState(null);
