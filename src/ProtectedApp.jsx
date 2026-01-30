@@ -610,7 +610,11 @@ export default function ProtectedApp({ isAdmin, checkingAdmin, route }) {
   const [showProfile, setShowProfile] = useState(false);
 
   const [companyData, setCompanyData] = useState(() => {
-     const saved = localStorage.getItem('sn_company');
+  const saved = localStorage.getItem('sn_company');
+  const [route, setRoute] = useState("app");
+  const [checkingAdmin, setCheckingAdmin] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+
      return saved ? JSON.parse(saved) : { cnpj: '', socialName: '', fantasyName: '', address: '' };
   });
 
