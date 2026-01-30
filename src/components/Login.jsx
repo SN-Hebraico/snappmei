@@ -4,7 +4,6 @@ import { supabase } from "../supabase";
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -15,7 +14,7 @@ export default function Login() {
 
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
-        email: email.trim(),
+        email,
         password,
       });
 
@@ -27,7 +26,10 @@ export default function Login() {
         return;
       }
 
-      // se der certo, o App.jsx vai trocar pra <ProtectedApp /> automaticamente
+      // Se logou, o App.jsx vai detectar a session e trocar para <ProtectedApp />
+    } catch (err) {
+      console.error(err);
+      setError("Erro inesperado ao tentar entrar.");
     } finally {
       setLoading(false);
     }
@@ -50,6 +52,7 @@ export default function Login() {
               className="w-full mt-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              autoComplete="email"
             />
           </div>
 
@@ -61,6 +64,7 @@ export default function Login() {
               className="w-full mt-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              autoComplete="current-password"
             />
           </div>
 
