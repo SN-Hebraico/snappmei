@@ -5,24 +5,23 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [errorMsg, setErrorMsg] = useState("");
+  const [error, setError] = useState("");
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    setErrorMsg("");
+    setError("");
     setLoading(true);
 
     try {
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-
       console.log("LOGIN DATA:", data);
       console.log("LOGIN ERROR:", error);
 
-      if (error) setErrorMsg(error.message);
-      // Se logou, o App/AuthGate detecta a session e troca para a área logada
+      if (error) setError(error.message);
+      // Se logou, o App.jsx detecta a session e troca para <ProtectedApp />
     } catch (err) {
       console.error(err);
-      setErrorMsg("Erro inesperado ao tentar entrar.");
+      setError("Erro inesperado ao tentar entrar.");
     } finally {
       setLoading(false);
     }
@@ -61,7 +60,7 @@ export default function Login() {
             />
           </div>
 
-          {errorMsg && <p className="text-sm text-red-600 text-center">{errorMsg}</p>}
+          {error && <p className="text-sm text-red-600 text-center">{error}</p>}
 
           <button
             type="submit"
