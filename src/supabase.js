@@ -8,6 +8,6 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
-    detectSessionInUrl: true, // <- ESSENCIAL pro recovery link
+    detectSessionInUrl: true, // MUITO IMPORTANTE para recovery com #access_token
   },
 });
