@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { supabase } from "../supabase";
+import { supabase } from "../supabase"; // se seu arquivo for src/supabase.js e exportar "supabase", ok
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -9,27 +9,31 @@ export default function Login() {
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    setLoading(true);
     setError("");
+    setLoading(true);
 
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password,
+      });
 
-    console.log("LOGIN DATA:", data);
-    console.log("LOGIN ERROR:", error);
+      console.log("LOGIN DATA:", data);
+      console.log("LOGIN ERROR:", error);
 
-    if (error) {
-  setError(error.message);
-  setLoading(false);
-  return;
-}
-setLoading(false);
+      if (error) {
+        setError(error.message);
+        return;
+      }
+
+      // Se deu certo, o App.jsx deve receber a session via onAuthStateChange
+      // e renderizar <ProtectedApp />
+    } catch (err) {
+      console.error("LOGIN EXCEPTION:", err);
+      setError("Erro inesperado ao fazer login.");
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
-    // se seu App.jsx já observa session, ele vai mudar sozinho
   };
 
   return (
@@ -46,6 +50,7 @@ setLoading(false);
             <input
               type="email"
               required
+              autoComplete="email"
               className="w-full mt-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -57,6 +62,7 @@ setLoading(false);
             <input
               type="password"
               required
+              autoComplete="current-password"
               className="w-full mt-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -68,7 +74,7 @@ setLoading(false);
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-blue-700 hover:bg-blue-800 text-white py-2 rounded-lg transition"
+            className="w-full bg-blue-700 hover:bg-blue-800 text-white py-2 rounded-lg transition disabled:opacity-60"
           >
             {loading ? "Entrando..." : "Entrar"}
           </button>
