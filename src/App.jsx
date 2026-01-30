@@ -7,28 +7,29 @@ import ResetPassword from "./components/ResetPassword";
 export default function App() {
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
-
-  const isRecovery =
-    typeof window !== "undefined" &&
-    window.location.hash.includes("type=recovery");
+  const [isRecovery, setIsRecovery] = useState(false);
 
   useEffect(() => {
-    let mounted = true;
+    // recovery também aparece no hash
+    if (typeof window !== "undefined" && window.location.hash.includes("type=recovery")) {
+      setIsRecovery(true);
+    }
 
     supabase.auth.getSession().then(({ data }) => {
-      if (!mounted) return;
       setSession(data.session);
       setLoading(false);
     });
 
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, newSession) => {
+    const { data: listener } = supabase.auth.onAuthStateChange((event, newSession) => {
       setSession(newSession);
+
+      // evento oficial de recovery
+      if (event === "PASSWORD_RECOVERY") {
+        setIsRecovery(true);
+      }
     });
 
-    return () => {
-      mounted = false;
-      listener.subscription.unsubscribe();
-    };
+    return () => listener.subscription.unsubscribe();
   }, []);
 
   if (loading) return null;
