@@ -10,7 +10,7 @@ export default function App() {
 
   const isRecovery = useMemo(() => {
     if (typeof window === "undefined") return false;
-    return window.location.hash.includes("type=recovery");
+    return window.location.hash.includes("type=recovery") || window.location.search.includes("type=recovery");
   }, []);
 
   useEffect(() => {
@@ -19,23 +19,21 @@ export default function App() {
     (async () => {
       const { data } = await supabase.auth.getSession();
       if (!mounted) return;
-      setSession(data.session);
+      setSession(data.session ?? null);
       setLoading(false);
     })();
 
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, newSession) => {
-      setSession(newSession);
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, newSession) => {
+      setSession(newSession ?? null);
     });
 
     return () => {
       mounted = false;
-      listener.subscription.unsubscribe();
+      sub?.subscription?.unsubscribe();
     };
   }, []);
 
   if (loading) return null;
-
-  // Agora sim: depois de carregar sessão, mostra ResetPassword
   if (isRecovery) return <ResetPassword />;
 
   return session ? <ProtectedApp /> : <Login />;
