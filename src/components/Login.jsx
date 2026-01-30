@@ -1,16 +1,17 @@
 import { useState } from "react";
-import { supabase } from "../supabase"; // se seu arquivo for src/supabase.js e exportar "supabase", ok
+import { supabase } from "../supabase";
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    setError("");
     setLoading(true);
+    setError("");
 
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
@@ -26,11 +27,7 @@ export default function Login() {
         return;
       }
 
-      // Se deu certo, o App.jsx deve receber a session via onAuthStateChange
-      // e renderizar <ProtectedApp />
-    } catch (err) {
-      console.error("LOGIN EXCEPTION:", err);
-      setError("Erro inesperado ao fazer login.");
+      // se der certo, o App.jsx vai trocar pra <ProtectedApp /> automaticamente
     } finally {
       setLoading(false);
     }
@@ -50,7 +47,6 @@ export default function Login() {
             <input
               type="email"
               required
-              autoComplete="email"
               className="w-full mt-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -62,7 +58,6 @@ export default function Login() {
             <input
               type="password"
               required
-              autoComplete="current-password"
               className="w-full mt-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -74,7 +69,7 @@ export default function Login() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-blue-700 hover:bg-blue-800 text-white py-2 rounded-lg transition disabled:opacity-60"
+            className="w-full bg-blue-700 hover:bg-blue-800 text-white py-2 rounded-lg transition"
           >
             {loading ? "Entrando..." : "Entrar"}
           </button>
