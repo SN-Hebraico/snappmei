@@ -5,61 +5,80 @@ export default function ResetPassword() {
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [loading, setLoading] = useState(false);
-  const [ready, setReady] = useState(false);
-  const [error, setError] = useState("");
-  const [ok, setOk] = useState("");
+  const [msg, setMsg] = useState("");
+  const [sessionOk, setSessionOk] = useState(false);
 
   useEffect(() => {
-    let alive = true;
+    const init = async () => {
+      setMsg("");
 
-    // dá tempo do Supabase processar o #access_token
-    const t = setTimeout(async () => {
-      const { data } = await supabase.auth.getSession();
-      if (!alive) return;
-
-      if (!data.session) {
-        setError("Sessão de autenticação ausente. Gere um novo link de recuperação.");
+      // 1) tenta pegar sessão do storage
+      const { data: s1 } = await supabase.auth.getSession();
+      if (s1?.session) {
+        setSessionOk(true);
+        return;
       }
-      setReady(true);
-    }, 200);
 
-    return () => {
-      alive = false;
-      clearTimeout(t);
+      // 2) se não tiver, tenta importar do HASH do link (#access_token=...&refresh_token=...&type=recovery)
+      const hash = window.location.hash?.startsWith("#") ? window.location.hash.slice(1) : "";
+      const params = new URLSearchParams(hash);
+
+      const type = params.get("type");
+      const access_token = params.get("access_token");
+      const refresh_token = params.get("refresh_token");
+
+      if (type === "recovery" && access_token && refresh_token) {
+        const { error } = await supabase.auth.setSession({ access_token, refresh_token });
+        if (error) {
+          setSessionOk(false);
+          setMsg("Não foi possível validar o link de recuperação. Gere um novo link.");
+          return;
+        }
+
+        // limpa o hash por segurança/estética
+        window.history.replaceState({}, document.title, window.location.pathname);
+
+        setSessionOk(true);
+        return;
+      }
+
+      setSessionOk(false);
+      setMsg("Sessão de autenticação ausente. Gere um novo link de recuperação.");
     };
+
+    init();
   }, []);
 
   const handleSave = async (e) => {
     e.preventDefault();
-    setError("");
-    setOk("");
+    setMsg("");
 
-    if (password.length < 6) {
-      setError("A senha precisa ter pelo menos 6 caracteres.");
+    if (!sessionOk) {
+      setMsg("Sessão de autenticação ausente. Gere um novo link de recuperação.");
       return;
     }
+
+    if (password.length < 6) {
+      setMsg("A senha deve ter pelo menos 6 caracteres.");
+      return;
+    }
+
     if (password !== confirm) {
-      setError("As senhas não conferem.");
+      setMsg("As senhas não conferem.");
       return;
     }
 
     setLoading(true);
     try {
-      const { data } = await supabase.auth.getSession();
-      if (!data.session) {
-        setError("Sessão de autenticação ausente. Gere um novo link de recuperação.");
-        return;
-      }
-
       const { error } = await supabase.auth.updateUser({ password });
       if (error) {
-        setError(error.message);
+        setMsg(error.message);
         return;
       }
 
-      setOk("Senha atualizada com sucesso! Você já pode fazer login.");
-      // opcional: limpar hash da url
-      window.history.replaceState({}, document.title, window.location.pathname);
+      setMsg("Senha atualizada com sucesso! Você já pode entrar.");
+      // opcional: deslogar depois de resetar
+      await supabase.auth.signOut();
     } finally {
       setLoading(false);
     }
@@ -80,7 +99,7 @@ export default function ResetPassword() {
               className="w-full mt-1 px-4 py-2 border rounded-lg"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              disabled={!ready || loading}
+              disabled={loading}
             />
           </div>
 
@@ -91,16 +110,15 @@ export default function ResetPassword() {
               className="w-full mt-1 px-4 py-2 border rounded-lg"
               value={confirm}
               onChange={(e) => setConfirm(e.target.value)}
-              disabled={!ready || loading}
+              disabled={loading}
             />
           </div>
 
-          {error && <p className="text-sm text-red-600 text-center">{error}</p>}
-          {ok && <p className="text-sm text-green-700 text-center">{ok}</p>}
+          {msg && <p className="text-sm text-red-600 text-center">{msg}</p>}
 
           <button
             type="submit"
-            disabled={!ready || loading}
+            disabled={loading}
             className="w-full bg-blue-700 hover:bg-blue-800 text-white py-2 rounded-lg transition"
           >
             {loading ? "Salvando..." : "Salvar nova senha"}
