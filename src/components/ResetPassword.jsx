@@ -1,27 +1,32 @@
-// src/components/ResetPassword.jsx
 import { useEffect, useState } from "react";
 import { supabase } from "../supabase";
 
 export default function ResetPassword() {
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
-  const [checking, setChecking] = useState(true);
-
   const [loading, setLoading] = useState(false);
+  const [ready, setReady] = useState(false);
   const [error, setError] = useState("");
   const [ok, setOk] = useState("");
 
   useEffect(() => {
-    // Espera o Supabase "consumir" o hash do link (#access_token=...)
+    let alive = true;
+
+    // dá tempo do Supabase processar o #access_token
     const t = setTimeout(async () => {
       const { data } = await supabase.auth.getSession();
-      if (!data?.session) {
+      if (!alive) return;
+
+      if (!data.session) {
         setError("Sessão de autenticação ausente. Gere um novo link de recuperação.");
       }
-      setChecking(false);
-    }, 300);
+      setReady(true);
+    }, 200);
 
-    return () => clearTimeout(t);
+    return () => {
+      alive = false;
+      clearTimeout(t);
+    };
   }, []);
 
   const handleSave = async (e) => {
@@ -30,7 +35,7 @@ export default function ResetPassword() {
     setOk("");
 
     if (password.length < 6) {
-      setError("A senha deve ter pelo menos 6 caracteres.");
+      setError("A senha precisa ter pelo menos 6 caracteres.");
       return;
     }
     if (password !== confirm) {
@@ -40,8 +45,8 @@ export default function ResetPassword() {
 
     setLoading(true);
     try {
-      const { data: s } = await supabase.auth.getSession();
-      if (!s?.session) {
+      const { data } = await supabase.auth.getSession();
+      if (!data.session) {
         setError("Sessão de autenticação ausente. Gere um novo link de recuperação.");
         return;
       }
@@ -52,9 +57,9 @@ export default function ResetPassword() {
         return;
       }
 
-      setOk("Senha atualizada com sucesso! Você já pode entrar.");
-      // opcional: jogar pro login
-      window.location.href = "/";
+      setOk("Senha atualizada com sucesso! Você já pode fazer login.");
+      // opcional: limpar hash da url
+      window.history.replaceState({}, document.title, window.location.pathname);
     } finally {
       setLoading(false);
     }
@@ -72,11 +77,10 @@ export default function ResetPassword() {
             <label className="text-sm text-gray-600">Nova senha</label>
             <input
               type="password"
-              required
               className="w-full mt-1 px-4 py-2 border rounded-lg"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              disabled={checking || loading}
+              disabled={!ready || loading}
             />
           </div>
 
@@ -84,11 +88,10 @@ export default function ResetPassword() {
             <label className="text-sm text-gray-600">Confirmar nova senha</label>
             <input
               type="password"
-              required
               className="w-full mt-1 px-4 py-2 border rounded-lg"
               value={confirm}
               onChange={(e) => setConfirm(e.target.value)}
-              disabled={checking || loading}
+              disabled={!ready || loading}
             />
           </div>
 
@@ -97,8 +100,8 @@ export default function ResetPassword() {
 
           <button
             type="submit"
-            disabled={checking || loading}
-            className="w-full bg-blue-700 hover:bg-blue-800 text-white py-2 rounded-lg"
+            disabled={!ready || loading}
+            className="w-full bg-blue-700 hover:bg-blue-800 text-white py-2 rounded-lg transition"
           >
             {loading ? "Salvando..." : "Salvar nova senha"}
           </button>
