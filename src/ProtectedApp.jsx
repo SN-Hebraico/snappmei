@@ -694,6 +694,37 @@ export default function ProtectedApp({ isAdmin, checkingAdmin, route }) {
       default: return <Dashboard />;
     }
   };
+  // Se estiver na rota de admin, mostra área administrativa (vamos construir no próximo passo)
+  if (route === "admin") {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#fbf4e2] px-4">
+        <div className="w-full max-w-md bg-white rounded-2xl shadow-lg p-8 text-center">
+          <div className="text-2xl font-bold text-slate-900">Painel ADM</div>
+
+          {checkingAdmin ? (
+            <p className="text-sm text-slate-600 mt-2">Validando permissões...</p>
+          ) : isAdmin ? (
+            <p className="text-sm text-slate-600 mt-2">
+              Acesso autorizado. No próximo passo vamos criar o cadastro de MEIs aqui.
+            </p>
+          ) : (
+            <p className="text-sm text-red-600 mt-2">Acesso negado.</p>
+          )}
+
+          <button
+            className="mt-6 w-full bg-slate-900 hover:bg-slate-800 text-white py-2 rounded-lg transition"
+            onClick={() => {
+              window.location.hash = "#/";
+            }}
+          >
+            Voltar para o app
+          </button>
+
+          <p className="text-xs text-gray-400 text-center mt-6">© SN Contabilidade</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={`min-h-screen ${COLORS.background} font-sans text-slate-900 flex justify-center`}>
