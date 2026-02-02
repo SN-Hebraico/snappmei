@@ -602,8 +602,63 @@ const CompanyProfileModal = ({ isOpen, onClose, data, onSave }) => {
      </Modal>
   );
 };
-
+import { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 export default function ProtectedApp({ isAdmin, checkingAdmin, route }) {
+// useState...
+  // useEffect...
+
+  /* ===============================
+     🔐 PASSO 3.4 — BLOCO DO PAINEL ADM
+     COLE EXATAMENTE AQUI
+  ================================ */
+
+  if (route === "admin") {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#fbf4e2] px-4">
+        <div className="w-full max-w-md bg-white rounded-2xl shadow-lg p-8 text-center">
+          <div className="text-2xl font-bold text-slate-900">Painel ADM</div>
+
+          {checkingAdmin ? (
+            <p className="text-sm text-slate-600 mt-2">Validando permissões...</p>
+          ) : isAdmin ? (
+            <p className="text-sm text-slate-600 mt-2">
+              Acesso autorizado. No próximo passo vamos criar o cadastro de MEIs aqui.
+            </p>
+          ) : (
+            <p className="text-sm text-red-600 mt-2">Acesso negado.</p>
+          )}
+
+          <button
+            className="mt-6 w-full bg-slate-900 hover:bg-slate-800 text-white py-2 rounded-lg transition"
+            onClick={() => {
+              window.location.hash = "#/";
+            }}
+          >
+            Voltar para o app
+          </button>
+
+          <p className="text-xs text-gray-400 text-center mt-6">© SN Contabilidade</p>
+        </div>
+      </div>
+    );
+  }
+
+  /* ===============================
+     ⬇️ RETURN PRINCIPAL DO APP
+     (PAINEL DO CLIENTE)
+  ================================ */
+
+  return (
+    <>
+      {/* todo o app do cliente */}
+    </>
+  );
+}
+  const [route, setRoute] = useState("app");
+  const [checkingAdmin, setCheckingAdmin] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+
   const [activeTab, setActiveTab] = useState('dashboard');
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
   const [editingItem, setEditingItem] = useState(null);
@@ -628,6 +683,29 @@ export default function ProtectedApp({ isAdmin, checkingAdmin, route }) {
 
   return () => window.removeEventListener("hashchange", onHashChange);
 }, []);
+  useEffect(() => {
+  if (route !== "admin") return;
+
+  const checkAdmin = async () => {
+    setCheckingAdmin(true);
+
+    const { data, error } = await supabase
+      .from("admins")
+      .select("user_id")
+      .single();
+
+    if (data && !error) {
+      setIsAdmin(true);
+    } else {
+      setIsAdmin(false);
+    }
+
+    setCheckingAdmin(false);
+  };
+
+  checkAdmin();
+}, [route]);
+
 
 // ✅ PASSO 3.1/3.2 — rota por hash (#/ e #/admin)
 const [route, setRoute] = useState("app");
