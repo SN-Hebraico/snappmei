@@ -608,25 +608,109 @@ export default function ProtectedApp({ isAdmin, checkingAdmin, route }) {
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
   const [editingItem, setEditingItem] = useState(null);
   const [showProfile, setShowProfile] = useState(false);
+  
+  useEffect(() => {
+  if (window.location.hash === "#/admin") {
+    setRoute("admin");
+  } else {
+    setRoute("app");
+  }
 
-  const [companyData, setCompanyData] = useState(() => {
-  const saved = localStorage.getItem('sn_company');
-  const [route, setRoute] = useState("app");
-  const [checkingAdmin, setCheckingAdmin] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
+  const onHashChange = () => {
+    if (window.location.hash === "#/admin") {
+      setRoute("admin");
+    } else {
+      setRoute("app");
+    }
+  };
 
-     return saved ? JSON.parse(saved) : { cnpj: '', socialName: '', fantasyName: '', address: '' };
-  });
+  window.addEventListener("hashchange", onHashChange);
 
-  const [transactions, setTransactions] = useState(() => {
-    const saved = localStorage.getItem('sn_transactions');
-    if (saved) return JSON.parse(saved);
-    return [{ id: 1, amount: 5000, date: `${new Date().getFullYear()}-01-15`, description: 'Serviços de Consultoria', type: 'income' }];
-  });
+  return () => window.removeEventListener("hashchange", onHashChange);
+}, []);
 
-  const [dasList, setDasList] = useState(() => {
-     const saved = localStorage.getItem('sn_das');
-     return saved ? JSON.parse(saved) : [];
+// ✅ PASSO 3.1/3.2 — rota por hash (#/ e #/admin)
+const [route, setRoute] = useState("app");
+
+// ✅ PASSO 3.3 — estado de permissão do admin
+const [checkingAdmin, setCheckingAdmin] = useState(false);
+const [isAdmin, setIsAdmin] = useState(false);
+
+// ✅ Detecta rota via hash (app/admin)
+useEffect(() => {
+  const computeRoute = () => {
+    const hash = window.location.hash || "#/";
+    // aceita "#/admin" e "#admin"
+    const isAdminRoute =
+      hash === "#/admin" || hash.startsWith("#/admin") || hash === "#admin" || hash.startsWith("#admin");
+
+    setRoute(isAdminRoute ? "admin" : "app");
+  };
+
+  computeRoute();
+  window.addEventListener("hashchange", computeRoute);
+  return () => window.removeEventListener("hashchange", computeRoute);
+}, []);
+
+// ✅ Validação de ADM (roda quando entrar na rota admin)
+useEffect(() => {
+  const checkAdmin = async () => {
+    if (route !== "admin") return;
+
+    setCheckingAdmin(true);
+    setIsAdmin(false);
+
+    try {
+      const { data: { user }, error: userErr } = await supabase.auth.getUser();
+      if (userErr || !user) {
+        setIsAdmin(false);
+        return;
+      }
+
+      // consulta segura: só retorna linha se o próprio user_id existir (pela policy que você aplicou)
+      const { data, error } = await supabase
+        .from("admins")
+        .select("user_id")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      setIsAdmin(!error && !!data);
+    } finally {
+      setCheckingAdmin(false);
+    }
+  };
+
+  checkAdmin();
+}, [route]);
+
+// ---------------------------
+// Seus estados do app (mantidos)
+// ---------------------------
+const [companyData, setCompanyData] = useState(() => {
+  const saved = localStorage.getItem("sn_company");
+  return saved
+    ? JSON.parse(saved)
+    : { cnpj: "", socialName: "", fantasyName: "", address: "" };
+});
+
+const [transactions, setTransactions] = useState(() => {
+  const saved = localStorage.getItem("sn_transactions");
+  if (saved) return JSON.parse(saved);
+
+  return [
+    {
+      id: 1,
+      amount: 5000,
+      date: `${new Date().getFullYear()}-01-15`,
+      description: "Serviços de Consultoria",
+      type: "income",
+    },
+  ];
+});
+
+const [dasList, setDasList] = useState(() => {
+  const saved = localStorage.getItem("sn_das");
+  return saved ? JSON.parse(saved) : [];
   });
 
   useEffect(() => localStorage.setItem('sn_transactions', JSON.stringify(transactions)), [transactions]);
