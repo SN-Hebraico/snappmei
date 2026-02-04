@@ -1,46 +1,18 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
-  PieChart, 
-  Wallet, 
-  Calendar as CalendarIcon, 
-  Info, 
-  Phone, 
-  Plus, 
-  Trash2, 
-  ChevronLeft, 
-  ChevronRight,
-  TrendingUp,
-  TrendingDown,
-  AlertTriangle,
-  CheckCircle,
-  Globe,
-  Mail,
-  MapPin,
-  MessageCircle, 
-  User,
-  FileText,
-  Edit2,
-  Save,
-  Shield,
-  Upload,
-  Download,
-  Eye,
-  X,
-  ExternalLink,
-  Clock,
-  FileCheck,
-  Search,
-  Filter,
-  CloudUpload,
-  Map,
-  DollarSign
+  PieChart, Wallet, Calendar as CalendarIcon, Info, Phone, Plus, Trash2, 
+  ChevronLeft, ChevronRight, TrendingUp, TrendingDown, AlertTriangle, 
+  CheckCircle, Globe, Mail, MapPin, MessageCircle, User, FileText, 
+  Edit2, Save, Shield, Upload, Download, Eye, X, ExternalLink, Clock, 
+  FileCheck, Search, Filter, CloudUpload, Map, DollarSign
 } from 'lucide-react';
 
+// NOTA: Certifique-se de ter o cliente 'supabase' importado aqui se for usar a verificação de admin real.
+// import { supabase } from './supabaseClient'; // Exemplo
+
 /**
- * SN Contabilidade - MEI Tracker App (Versão 3.2 - Faturamento Mensal)
- * * Atualizações:
- * - Novo Card "Faturamento Mensal" com filtro por mês.
- * - Posicionado acima do Total de Despesas.
+ * SN Contabilidade - MEI Tracker App (Versão 3.2 - Refatorada)
+ * Organizador: Gemini AI
  */
 
 // --- Paleta de Cores ---
@@ -55,7 +27,19 @@ const COLORS = {
   accentBg: "bg-[#d4af37]",
 };
 
-// --- Componentes UI ---
+// --- Utilitários ---
+const MEI_LIMIT = 81000;
+const MONTHS = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+const MONTHS_SHORT = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+
+const formatCurrency = (value) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+const formatDate = (dateString) => {
+  if (!dateString) return '-';
+  const [year, month, day] = dateString.split('-');
+  return `${day}/${month}/${year}`;
+};
+
+// --- Componentes UI (Cards, Buttons, Modals) ---
 
 const Card = ({ children, className = "" }) => (
   <div className={`${COLORS.cardBg} rounded-xl shadow-sm border ${COLORS.border} p-4 ${className}`}>
@@ -104,18 +88,6 @@ const Modal = ({ isOpen, onClose, title, children }) => {
       </div>
     </div>
   );
-};
-
-// --- Utilitários ---
-const MEI_LIMIT = 81000;
-const MONTHS = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
-const MONTHS_SHORT = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
-
-const formatCurrency = (value) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
-const formatDate = (dateString) => {
-  if (!dateString) return '-';
-  const [year, month, day] = dateString.split('-');
-  return `${day}/${month}/${year}`;
 };
 
 // --- Widgets ---
@@ -167,29 +139,22 @@ const CalendarWidget = () => {
   );
 };
 
-// --- Telas ---
+// --- Telas do App ---
 
 const Dashboard = ({ transactions, year, onContactClick, companyData }) => {
-  // Estado para o filtro de mês (0 = Janeiro, 11 = Dezembro)
   const [selectedMonthIndex, setSelectedMonthIndex] = useState(new Date().getMonth());
 
   const { totalRevenue, totalExpenses, monthlyRevenue } = useMemo(() => {
     const yearTransactions = transactions.filter(t => new Date(t.date).getFullYear() === year);
     
-    // Cálculo Anual
     const revenueYear = yearTransactions.filter(t => t.type === 'income').reduce((acc, curr) => acc + curr.amount, 0);
     const expensesYear = yearTransactions.filter(t => t.type === 'expense').reduce((acc, curr) => acc + curr.amount, 0);
 
-    // Cálculo Mensal (Baseado no filtro)
     const revenueMonth = yearTransactions
         .filter(t => t.type === 'income' && new Date(t.date).getMonth() === selectedMonthIndex)
         .reduce((acc, curr) => acc + curr.amount, 0);
 
-    return {
-      totalRevenue: revenueYear,
-      totalExpenses: expensesYear,
-      monthlyRevenue: revenueMonth
-    };
+    return { totalRevenue: revenueYear, totalExpenses: expensesYear, monthlyRevenue: revenueMonth };
   }, [transactions, year, selectedMonthIndex]);
 
   const percentUsed = (totalRevenue / MEI_LIMIT) * 100;
@@ -213,7 +178,6 @@ const Dashboard = ({ transactions, year, onContactClick, companyData }) => {
 
   return (
     <div className="space-y-6 pb-20 animate-in fade-in pt-4">
-      
       {/* 1. Card Faturamento Anual */}
       <Card className="bg-gradient-to-br from-blue-900 to-slate-900 text-white border-none shadow-xl">
         <div className="flex justify-between items-start mb-4">
@@ -257,10 +221,9 @@ const Dashboard = ({ transactions, year, onContactClick, companyData }) => {
         </div>
       </div>
 
-      {/* 3. NOVO CARD: Faturamento Mensal */}
+      {/* 3. Card Faturamento Mensal */}
       <Card className="bg-gradient-to-br from-emerald-700 to-teal-900 text-white border-none shadow-lg">
         <div className="flex flex-col gap-4">
-           {/* Filtro de Mês */}
            <div className="flex items-center justify-between border-b border-emerald-600/50 pb-2">
               <p className="text-emerald-100 text-sm font-medium">Faturamento Mensal</p>
               <div className="flex items-center bg-black/20 rounded-full p-1">
@@ -269,7 +232,6 @@ const Dashboard = ({ transactions, year, onContactClick, companyData }) => {
                  <button onClick={handleNextMonth} className="p-1 hover:bg-white/10 rounded-full transition-colors"><ChevronRight size={14}/></button>
               </div>
            </div>
-           
            <div className="flex justify-between items-end">
               <div>
                  <h3 className="text-3xl font-bold text-white">{formatCurrency(monthlyRevenue)}</h3>
@@ -292,10 +254,8 @@ const Dashboard = ({ transactions, year, onContactClick, companyData }) => {
         </div>
       </Card>
 
-      {/* 5. Calendário */}
+      {/* 5. Calendário e Ajuda */}
       <CalendarWidget />
-
-      {/* 6. Atalho Ajuda */}
       <div onClick={onContactClick} className="cursor-pointer bg-[#1B2A41] rounded-xl p-4 flex items-center justify-between shadow-lg text-white">
          <div className="flex items-center gap-3">
             <div className="bg-white/10 p-2 rounded-full text-white"><Phone size={20} /></div>
@@ -322,7 +282,6 @@ const History = ({ transactions, onDelete, onEdit }) => {
 
   return (
     <div className="space-y-6 pb-20 animate-in pt-4">
-      {/* Filtros */}
       <Card className="bg-white border-slate-200">
          <div className="flex items-center gap-2 mb-3">
             <Filter size={14} className="text-[#1B2A41]"/>
@@ -602,199 +561,101 @@ const CompanyProfileModal = ({ isOpen, onClose, data, onSave }) => {
      </Modal>
   );
 };
-import { useEffect, useState } from "react";
-import { useEffect, useState } from "react";
-export default function ProtectedApp({ isAdmin, checkingAdmin, route }) {
-// useState...
-  // useEffect...
 
-  /* ===============================
-     🔐 PASSO 3.4 — BLOCO DO PAINEL ADM
-     COLE EXATAMENTE AQUI
-  ================================ */
+// =========================================================
+// COMPONENTE PRINCIPAL (Integrado)
+// =========================================================
 
-  if (route === "admin") {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[#fbf4e2] px-4">
-        <div className="w-full max-w-md bg-white rounded-2xl shadow-lg p-8 text-center">
-          <div className="text-2xl font-bold text-slate-900">Painel ADM</div>
-
-          {checkingAdmin ? (
-            <p className="text-sm text-slate-600 mt-2">Validando permissões...</p>
-          ) : isAdmin ? (
-            <p className="text-sm text-slate-600 mt-2">
-              Acesso autorizado. No próximo passo vamos criar o cadastro de MEIs aqui.
-            </p>
-          ) : (
-            <p className="text-sm text-red-600 mt-2">Acesso negado.</p>
-          )}
-
-          <button
-            className="mt-6 w-full bg-slate-900 hover:bg-slate-800 text-white py-2 rounded-lg transition"
-            onClick={() => {
-              window.location.hash = "#/";
-            }}
-          >
-            Voltar para o app
-          </button>
-
-          <p className="text-xs text-gray-400 text-center mt-6">© SN Contabilidade</p>
-        </div>
-      </div>
-    );
-  }
-
-  /* ===============================
-     ⬇️ RETURN PRINCIPAL DO APP
-     (PAINEL DO CLIENTE)
-  ================================ */
-
-  return (
-    <>
-      {/* todo o app do cliente */}
-    </>
-  );
-}
+export default function ProtectedApp() {
+  // --- Estados de Rota e Admin ---
   const [route, setRoute] = useState("app");
   const [checkingAdmin, setCheckingAdmin] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
 
+  // --- Estados da Aplicação ---
   const [activeTab, setActiveTab] = useState('dashboard');
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
   const [editingItem, setEditingItem] = useState(null);
   const [showProfile, setShowProfile] = useState(false);
   
+  // --- Estados de Dados (Persistência Local) ---
+  const [companyData, setCompanyData] = useState(() => {
+    const saved = localStorage.getItem("sn_company");
+    return saved ? JSON.parse(saved) : { cnpj: "", socialName: "", fantasyName: "", address: "" };
+  });
+
+  const [transactions, setTransactions] = useState(() => {
+    const saved = localStorage.getItem("sn_transactions");
+    if (saved) return JSON.parse(saved);
+    return [{ id: 1, amount: 5000, date: `${new Date().getFullYear()}-01-15`, description: "Serviços de Consultoria", type: "income" }];
+  });
+
+  const [dasList, setDasList] = useState(() => {
+    const saved = localStorage.getItem("sn_das");
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  // --- Efeitos (Side Effects) ---
+
+  // 1. Gerenciamento de Rota (#/admin ou #/)
   useEffect(() => {
-  if (window.location.hash === "#/admin") {
-    setRoute("admin");
-  } else {
-    setRoute("app");
-  }
+    const computeRoute = () => {
+      const hash = window.location.hash || "#/";
+      const isAdminRoute = hash === "#/admin" || hash.startsWith("#/admin") || hash === "#admin" || hash.startsWith("#admin");
+      setRoute(isAdminRoute ? "admin" : "app");
+    };
+    computeRoute();
+    window.addEventListener("hashchange", computeRoute);
+    return () => window.removeEventListener("hashchange", computeRoute);
+  }, []);
 
-  const onHashChange = () => {
-    if (window.location.hash === "#/admin") {
-      setRoute("admin");
-    } else {
-      setRoute("app");
-    }
-  };
-
-  window.addEventListener("hashchange", onHashChange);
-
-  return () => window.removeEventListener("hashchange", onHashChange);
-}, []);
+  // 2. Verificação de Admin via Supabase (Se na rota de admin)
   useEffect(() => {
-  if (route !== "admin") return;
-
-  const checkAdmin = async () => {
-    setCheckingAdmin(true);
-
-    const { data, error } = await supabase
-      .from("admins")
-      .select("user_id")
-      .single();
-
-    if (data && !error) {
-      setIsAdmin(true);
-    } else {
-      setIsAdmin(false);
-    }
-
-    setCheckingAdmin(false);
-  };
-
-  checkAdmin();
-}, [route]);
-
-
-// ✅ PASSO 3.1/3.2 — rota por hash (#/ e #/admin)
-const [route, setRoute] = useState("app");
-
-// ✅ PASSO 3.3 — estado de permissão do admin
-const [checkingAdmin, setCheckingAdmin] = useState(false);
-const [isAdmin, setIsAdmin] = useState(false);
-
-// ✅ Detecta rota via hash (app/admin)
-useEffect(() => {
-  const computeRoute = () => {
-    const hash = window.location.hash || "#/";
-    // aceita "#/admin" e "#admin"
-    const isAdminRoute =
-      hash === "#/admin" || hash.startsWith("#/admin") || hash === "#admin" || hash.startsWith("#admin");
-
-    setRoute(isAdminRoute ? "admin" : "app");
-  };
-
-  computeRoute();
-  window.addEventListener("hashchange", computeRoute);
-  return () => window.removeEventListener("hashchange", computeRoute);
-}, []);
-
-// ✅ Validação de ADM (roda quando entrar na rota admin)
-useEffect(() => {
-  const checkAdmin = async () => {
-    if (route !== "admin") return;
-
-    setCheckingAdmin(true);
-    setIsAdmin(false);
-
-    try {
-      const { data: { user }, error: userErr } = await supabase.auth.getUser();
-      if (userErr || !user) {
+    const checkAdmin = async () => {
+      if (route !== "admin") return;
+      
+      // Se não houver cliente supabase configurado, apenas bloqueie o acesso por segurança
+      // Remova este bloco if/return se você tiver o supabase importado
+      if (typeof supabase === 'undefined') {
+        console.warn("Cliente Supabase não encontrado. Verificação de admin ignorada.");
         setIsAdmin(false);
         return;
       }
 
-      // consulta segura: só retorna linha se o próprio user_id existir (pela policy que você aplicou)
-      const { data, error } = await supabase
-        .from("admins")
-        .select("user_id")
-        .eq("user_id", user.id)
-        .maybeSingle();
+      setCheckingAdmin(true);
+      setIsAdmin(false);
 
-      setIsAdmin(!error && !!data);
-    } finally {
-      setCheckingAdmin(false);
-    }
-  };
+      try {
+        const { data: { user }, error: userErr } = await supabase.auth.getUser();
+        if (userErr || !user) {
+          setIsAdmin(false);
+          return;
+        }
 
-  checkAdmin();
-}, [route]);
+        const { data, error } = await supabase
+          .from("admins")
+          .select("user_id")
+          .eq("user_id", user.id)
+          .maybeSingle();
 
-// ---------------------------
-// Seus estados do app (mantidos)
-// ---------------------------
-const [companyData, setCompanyData] = useState(() => {
-  const saved = localStorage.getItem("sn_company");
-  return saved
-    ? JSON.parse(saved)
-    : { cnpj: "", socialName: "", fantasyName: "", address: "" };
-});
+        setIsAdmin(!error && !!data);
+      } catch (err) {
+        console.error("Erro ao verificar admin:", err);
+      } finally {
+        setCheckingAdmin(false);
+      }
+    };
 
-const [transactions, setTransactions] = useState(() => {
-  const saved = localStorage.getItem("sn_transactions");
-  if (saved) return JSON.parse(saved);
+    checkAdmin();
+  }, [route]);
 
-  return [
-    {
-      id: 1,
-      amount: 5000,
-      date: `${new Date().getFullYear()}-01-15`,
-      description: "Serviços de Consultoria",
-      type: "income",
-    },
-  ];
-});
-
-const [dasList, setDasList] = useState(() => {
-  const saved = localStorage.getItem("sn_das");
-  return saved ? JSON.parse(saved) : [];
-  });
-
+  // 3. Persistência de Dados
   useEffect(() => localStorage.setItem('sn_transactions', JSON.stringify(transactions)), [transactions]);
   useEffect(() => localStorage.setItem('sn_company', JSON.stringify(companyData)), [companyData]);
   useEffect(() => localStorage.setItem('sn_das', JSON.stringify(dasList)), [dasList]);
 
+  // --- Funções Auxiliares ---
+  
   const saveTransaction = (t) => {
     setTransactions(prev => prev.some(item => item.id === t.id) ? prev.map(item => item.id === t.id ? t : item) : [...prev, t]);
     setEditingItem(null); setActiveTab('dashboard'); 
@@ -803,6 +664,7 @@ const [dasList, setDasList] = useState(() => {
   const saveDas = (das) => setDasList(prev => prev.some(d => d.id === das.id) ? prev.map(d => d.id === das.id ? das : d) : [...prev, das]);
   const deleteDas = (id) => { if(window.confirm("Excluir DAS?")) setDasList(prev => prev.filter(d => d.id !== id)); };
 
+  // --- Sub-componente de Formulário (interno pois usa dependencias locais) ---
   const TransactionForm = () => {
      const [form, setForm] = useState(editingItem || { amount: '', date: new Date().toISOString().split('T')[0], description: '', type: 'income' });
      const handleSubmit = (e) => { e.preventDefault(); if(!form.amount) return; saveTransaction({...form, id: form.id || Date.now(), amount: parseFloat(form.amount)}); };
@@ -857,10 +719,12 @@ const [dasList, setDasList] = useState(() => {
       case 'das': return <DasManager dasList={dasList} onSaveDas={saveDas} onDeleteDas={deleteDas} />;
       case 'learnMore': return <LearnMore />;
       case 'contact': return <ContactView />;
-      default: return <Dashboard />;
+      default: return <Dashboard transactions={transactions} year={currentYear} onContactClick={() => setActiveTab('contact')} companyData={companyData} />;
     }
   };
-  // Se estiver na rota de admin, mostra área administrativa (vamos construir no próximo passo)
+
+  // --- RENDERIZAÇÃO CONDICIONAL (Admin vs App) ---
+
   if (route === "admin") {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#fbf4e2] px-4">
@@ -871,10 +735,13 @@ const [dasList, setDasList] = useState(() => {
             <p className="text-sm text-slate-600 mt-2">Validando permissões...</p>
           ) : isAdmin ? (
             <p className="text-sm text-slate-600 mt-2">
-              Acesso autorizado. No próximo passo vamos criar o cadastro de MEIs aqui.
+              Acesso autorizado. (Módulo de cadastro de MEIs aqui)
             </p>
           ) : (
-            <p className="text-sm text-red-600 mt-2">Acesso negado.</p>
+            <div className="mt-2">
+                <p className="text-sm text-red-600">Acesso negado.</p>
+                <p className="text-xs text-slate-400 mt-1">Se você é admin, verifique se o Supabase está conectado corretamente.</p>
+            </div>
           )}
 
           <button
@@ -892,6 +759,7 @@ const [dasList, setDasList] = useState(() => {
     );
   }
 
+  // Renderização Padrão (App do Cliente)
   return (
     <div className={`min-h-screen ${COLORS.background} font-sans text-slate-900 flex justify-center`}>
       <div className={`w-full max-w-md ${COLORS.background} min-h-screen relative shadow-2xl overflow-hidden flex flex-col`}>
@@ -924,9 +792,8 @@ const [dasList, setDasList] = useState(() => {
                 <item.icon size={22} strokeWidth={activeTab === item.id ? 2.5 : 2} /><span className="text-[9px]">{item.label}</span>
              </button>
           ))}
-          {/* Botão FAB flutuante ajustado para não cobrir itens */}
+          {/* Botão Flutuante Central (Atalho para Adicionar) */}
           <div className="absolute left-1/2 -translate-x-1/2 -top-12 pointer-events-none">
-             {/* Espaço reservado para visual, o botão real é via aba 'add' no fluxo, mas podemos adicionar um botão de ação rápida */}
              <button onClick={() => { setEditingItem(null); setActiveTab('add'); }} className="pointer-events-auto bg-[#1B2A41] text-white w-12 h-12 rounded-full flex items-center justify-center shadow-lg border-4 border-[#FEF8E5] hover:scale-105 transition-transform"><Plus size={24} /></button>
           </div>
         </nav>
